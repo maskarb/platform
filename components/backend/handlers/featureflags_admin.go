@@ -326,6 +326,7 @@ func EvaluateFeatureFlag(c *gin.Context) {
 	// This uses the initialized Unleash Go SDK which properly tracks usage metrics.
 	// The SDK was initialized in main.go via featureflags.Init().
 	enabled := FeatureEnabledForRequest(c, flagName)
+
 	c.JSON(http.StatusOK, gin.H{
 		"flag":    flagName,
 		"enabled": enabled,
