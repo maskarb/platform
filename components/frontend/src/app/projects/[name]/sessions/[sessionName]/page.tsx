@@ -96,6 +96,7 @@ import {
   useWorkspaceList,
 } from "@/services/queries/use-workspace";
 import { successToast, errorToast } from "@/hooks/use-toast";
+import { useWorkspaceFlag } from "@/services/queries/use-feature-flags-admin";
 import {
   useOOTBWorkflows,
   useWorkflowMetadata,
@@ -210,9 +211,12 @@ export default function ProjectSessionDetailPage({
   // Check integration status
   const { data: integrationsStatus } = useIntegrationsStatus();
   const githubConfigured = integrationsStatus?.github?.active != null;
-  
+
   // Get current user for feedback context
   const { data: currentUser } = useCurrentUser();
+
+  // Feature flags - workspace-scoped (see constitution Principle XI for naming convention)
+  const { enabled: fileExplorerEnabled } = useWorkspaceFlag(projectName, "frontend.file-explorer.enabled");
 
   // Extract phase for sidebar state management
   const phase = session?.status?.phase || "Pending";
@@ -1656,7 +1660,8 @@ export default function ProjectSessionDetailPage({
 
                     <IntegrationsAccordion />
 
-                    {/* File Explorer */}
+                    {/* File Explorer (feature flagged) */}
+                    {fileExplorerEnabled && (
                     <AccordionItem
                       value="file-explorer"
                       className="border rounded-lg px-3 bg-card"
@@ -1990,6 +1995,7 @@ export default function ProjectSessionDetailPage({
                         </div>
                       </AccordionContent>
                     </AccordionItem>
+                    )}
                   </Accordion>
                 </div>
               </div>
@@ -2118,7 +2124,8 @@ export default function ProjectSessionDetailPage({
                           />
                           <IntegrationsAccordion />
 
-                          {/* File Explorer */}
+                          {/* File Explorer (feature flagged) */}
+                          {fileExplorerEnabled && (
                           <AccordionItem
                             value="file-explorer"
                             className="border rounded-lg px-3 bg-card"
@@ -2442,6 +2449,7 @@ export default function ProjectSessionDetailPage({
                               </div>
                             </AccordionContent>
                           </AccordionItem>
+                          )}
                   </Accordion>
                 </div>
 
