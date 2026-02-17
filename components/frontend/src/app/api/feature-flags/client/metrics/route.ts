@@ -12,7 +12,6 @@ export async function POST(request: NextRequest) {
 
   // If Unleash isn't configured, just acknowledge the request
   if (!baseUrl || !clientKey) {
-    console.log('[Unleash Metrics] Unleash not configured, ignoring metrics');
     return new Response(null, { status: 202 });
   }
 
@@ -20,8 +19,6 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    console.log('[Unleash Metrics] Forwarding metrics to:', url.toString());
-    console.log('[Unleash Metrics] Payload:', JSON.stringify(body, null, 2));
 
     const res = await fetch(url.toString(), {
       method: 'POST',
@@ -33,16 +30,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (!res.ok) {
-      const errorText = await res.text();
-      console.error('[Unleash Metrics] Error:', res.status, errorText);
+      console.error('Unleash metrics proxy error:', res.status, await res.text());
       // Still return 202 to not break the client
       return new Response(null, { status: 202 });
     }
 
-    console.log('[Unleash Metrics] Success:', res.status);
     return new Response(null, { status: 202 });
   } catch (error) {
-    console.error('[Unleash Metrics] Fetch error:', error);
+    console.error('Unleash metrics proxy fetch error:', error);
     return new Response(null, { status: 202 });
   }
 }
