@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -35,14 +35,8 @@ import {
 import type { CreateAgenticSessionRequest } from "@/types/agentic-session";
 import { useCreateSession } from "@/services/queries/use-sessions";
 import { useIntegrationsStatus } from "@/services/queries/use-integrations";
+import { useAvailableModels } from "@/services/queries/use-models";
 import { errorToast } from "@/hooks/use-toast";
-
-const models = [
-  { value: "claude-sonnet-4-5", label: "Claude Sonnet 4.5" },
-  { value: "claude-opus-4-6", label: "Claude Opus 4.6" },
-  { value: "claude-opus-4-5", label: "Claude Opus 4.5" },
-  { value: "claude-haiku-4-5", label: "Claude Haiku 4.5" },
-];
 
 const formSchema = z.object({
   displayName: z.string().max(50).optional(),
@@ -70,6 +64,10 @@ export function CreateSessionDialog({
   const createSessionMutation = useCreateSession();
 
   const { data: integrationsStatus } = useIntegrationsStatus();
+  const { data: models = [], isLoading: modelsLoading } = useAvailableModels(projectName);
+
+  // Find the default model from the API response, or use the first model
+  const defaultModel = models.find(m => m.default)?.value || models[0]?.value || '';
 
   const githubConfigured = integrationsStatus?.github?.active != null;
   const gitlabConfigured = integrationsStatus?.gitlab?.connected ?? false;
@@ -80,12 +78,19 @@ export function CreateSessionDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       displayName: "",
-      model: "claude-sonnet-4-5",
+      model: "",
       temperature: 0.7,
       maxTokens: 4000,
       timeout: 300,
     },
   });
+
+  // Set the default model when models are loaded
+  useEffect(() => {
+    if (defaultModel && !form.getValues('model')) {
+      form.setValue('model', defaultModel);
+    }
+  }, [defaultModel, form]);
 
   const onSubmit = async (values: FormValues) => {
     if (!projectName) return;
@@ -172,10 +177,21 @@ export function CreateSessionDialog({
                 render={({ field }) => (
                   <FormItem className="w-full">
                     <FormLabel>Model</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={modelsLoading || createSessionMutation.isPending}
+                    >
                       <FormControl>
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select a model" />
+                          {modelsLoading ? (
+                            <span className="flex items-center gap-2 text-muted-foreground">
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                              Loading models...
+                            </span>
+                          ) : (
+                            <SelectValue placeholder="Select a model" />
+                          )}
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

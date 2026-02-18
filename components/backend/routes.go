@@ -29,6 +29,8 @@ func registerRoutes(r *gin.Engine) {
 			projectGroup.GET("/repo/seed-status", handlers.GetRepoSeedStatus)
 			projectGroup.POST("/repo/seed", handlers.SeedRepositoryEndpoint)
 
+			projectGroup.GET("/models", handlers.ListAvailableModels)
+
 			projectGroup.GET("/agentic-sessions", handlers.ListSessions)
 			projectGroup.POST("/agentic-sessions", handlers.CreateSession)
 			projectGroup.GET("/agentic-sessions/:sessionName", handlers.GetSession)
