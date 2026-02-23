@@ -146,6 +146,9 @@ func registerRoutes(r *gin.Engine) {
 		// Cluster info endpoint (public, no auth required)
 		api.GET("/cluster-info", handlers.GetClusterInfo)
 
+		// Models endpoint (public, no auth required)
+		api.GET("/models", handlers.ListModels)
+
 		api.GET("/projects", handlers.ListProjects)
 		api.POST("/projects", handlers.CreateProject)
 		api.GET("/projects/:projectName", handlers.GetProject)
