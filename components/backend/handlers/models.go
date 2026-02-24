@@ -2,14 +2,18 @@ package handlers
 
 import (
 	"ambient-code-backend/types"
+	"context"
+	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"k8s.io/apimachinery/pkg/api/errors"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// AvailableModels is the single source of truth for model definitions.
-// This list is returned by the /api/models endpoint and used for validation.
-var AvailableModels = []types.Model{
+// DefaultModels is the fallback when the ambient-models ConfigMap is missing or invalid.
+var DefaultModels = []types.Model{
 	{
 		ID:          "claude-sonnet-4-5",
 		Label:       "Claude Sonnet 4.5",
@@ -48,13 +52,44 @@ var AvailableModels = []types.Model{
 	},
 }
 
+// loadModelsFromConfigMap reads the ambient-models ConfigMap.
+// Returns DefaultModels if the ConfigMap is missing or unparseable.
+func loadModelsFromConfigMap() []types.Model {
+	if K8sClient == nil {
+		return DefaultModels
+	}
+	cm, err := K8sClient.CoreV1().ConfigMaps(Namespace).Get(
+		context.Background(), "ambient-models", v1.GetOptions{})
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			log.Printf("Failed to read ambient-models ConfigMap: %v", err)
+		}
+		return DefaultModels
+	}
+	raw, ok := cm.Data["models.json"]
+	if !ok {
+		log.Printf("ambient-models ConfigMap missing 'models.json' key")
+		return DefaultModels
+	}
+	var models []types.Model
+	if err := json.Unmarshal([]byte(raw), &models); err != nil {
+		log.Printf("Failed to parse models.json from ConfigMap: %v", err)
+		return DefaultModels
+	}
+	if len(models) == 0 {
+		return DefaultModels
+	}
+	return models
+}
+
 // ListModels handles GET /api/models
 // Returns the list of enabled models available for agentic sessions.
 // This is a public endpoint that does not require authentication.
 func ListModels(c *gin.Context) {
+	models := loadModelsFromConfigMap()
 	// Filter to only enabled models
 	var enabledModels []types.Model
-	for _, model := range AvailableModels {
+	for _, model := range models {
 		if model.Enabled {
 			enabledModels = append(enabledModels, model)
 		}
@@ -68,7 +103,7 @@ func ListModels(c *gin.Context) {
 // GetVertexModelID returns the Vertex AI model ID for a given model ID.
 // Returns the original model ID if no mapping is found.
 func GetVertexModelID(modelID string) string {
-	for _, model := range AvailableModels {
+	for _, model := range loadModelsFromConfigMap() {
 		if model.ID == modelID {
 			return model.VertexID
 		}
@@ -78,7 +113,7 @@ func GetVertexModelID(modelID string) string {
 
 // IsValidModel checks if a model ID is valid and enabled.
 func IsValidModel(modelID string) bool {
-	for _, model := range AvailableModels {
+	for _, model := range loadModelsFromConfigMap() {
 		if model.ID == modelID && model.Enabled {
 			return true
 		}
@@ -88,13 +123,14 @@ func IsValidModel(modelID string) bool {
 
 // GetDefaultModel returns the default model ID.
 func GetDefaultModel() string {
-	for _, model := range AvailableModels {
+	models := loadModelsFromConfigMap()
+	for _, model := range models {
 		if model.Default && model.Enabled {
 			return model.ID
 		}
 	}
 	// Fallback to first enabled model
-	for _, model := range AvailableModels {
+	for _, model := range models {
 		if model.Enabled {
 			return model.ID
 		}

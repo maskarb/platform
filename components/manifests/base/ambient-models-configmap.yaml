@@ -1,0 +1,44 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ambient-models
+data:
+  models.json: |
+    [
+      {
+        "id": "claude-sonnet-4-5",
+        "label": "Claude Sonnet 4.5",
+        "vertexId": "claude-sonnet-4-5@20250929",
+        "enabled": true,
+        "default": true,
+        "tier": "standard",
+        "description": "Fast and intelligent, best for most tasks"
+      },
+      {
+        "id": "claude-opus-4-6",
+        "label": "Claude Opus 4.6",
+        "vertexId": "claude-opus-4-6@default",
+        "enabled": true,
+        "default": false,
+        "tier": "premium",
+        "description": "Most capable model for complex reasoning"
+      },
+      {
+        "id": "claude-opus-4-5",
+        "label": "Claude Opus 4.5",
+        "vertexId": "claude-opus-4-5@20251101",
+        "enabled": true,
+        "default": false,
+        "tier": "premium",
+        "description": "Advanced reasoning and analysis"
+      },
+      {
+        "id": "claude-haiku-4-5",
+        "label": "Claude Haiku 4.5",
+        "vertexId": "claude-haiku-4-5@20251001",
+        "enabled": true,
+        "default": false,
+        "tier": "standard",
+        "description": "Fast and cost-effective for simple tasks"
+      }
+    ]

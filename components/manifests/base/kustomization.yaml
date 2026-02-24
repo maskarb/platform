@@ -21,6 +21,7 @@ resources:
 - ambient-api-server-service.yml
 - ambient-api-server-route.yml
 - unleash-deployment.yaml
+- ambient-models-configmap.yaml
 
 # Default images (can be overridden by overlays)
 images:
